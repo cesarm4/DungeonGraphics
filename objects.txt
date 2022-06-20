@@ -1,0 +1,27 @@
+CopperKey_Torus
+GoldKey_Torus
+Doors_Cube
+GoldKeyHole4_Torus
+CopperKeyHole2_Torus
+Lever1_Cylinder
+Lever3_Cylinder
+Lever5_Cylinder
+Door5_Cube
+Door4_Cube
+Door3_Cube
+Door2_Cube
+Door1_Cube
+Floor_Plane
+WallW_Plane
+WallE_Plane
+WallN_Plane
+WallS_Plane
+Ceiling_Plane
+
+
+Creo SceneObject
+Chiamo SceneObject.init
+aggiungi a lista objects
+cleanup è già automatico 
+populate command buffer automatico
+Chiamo updateObjectUniform

@@ -333,7 +333,7 @@ protected:
 	std::vector<VkFence> imagesInFlight;
 	
 	glm::vec3 CamAng = glm::vec3(0.0f);
-	glm::vec3 CamPos = glm::vec3(0.0f, 0.5f, 5.0f);
+	glm::vec3 CamPos = glm::vec3(0.0f, 0.5f, 4.0f);
 
 	// Lesson 12
     void initWindow() {
@@ -1471,9 +1471,6 @@ protected:
 	
 };
 
-
-
-
 void Model::loadModel(std::string file) {
 	tinyobj::attrib_t attrib;
 	std::vector<tinyobj::shape_t> shapes;
@@ -1485,7 +1482,9 @@ void Model::loadModel(std::string file) {
 		throw std::runtime_error(warn + err);
 	}
 	
+	std::cout << "*****************SHAPES******************" << std::endl;
 	for (const auto& shape : shapes) {
+		std::cout << shape.name << std::endl;
 		for (const auto& index : shape.mesh.indices) {
 			Vertex vertex{};
 			
@@ -1495,10 +1494,14 @@ void Model::loadModel(std::string file) {
 				attrib.vertices[3 * index.vertex_index + 2]
 			};
 			
-			vertex.texCoord = {
-				attrib.texcoords[2 * index.texcoord_index + 0],
-				1 - attrib.texcoords[2 * index.texcoord_index + 1] 
-			};
+			if (attrib.texcoords.size() > 0) {
+				vertex.texCoord = {
+					attrib.texcoords[2 * index.texcoord_index + 0],
+					1 - attrib.texcoords[2 * index.texcoord_index + 1] 
+				};
+			} else {
+				vertex.texCoord = { 0.0f, 0.0f };
+			}
 
 			vertex.norm = {
 				attrib.normals[3 * index.normal_index + 0],
@@ -1545,7 +1548,8 @@ void Model::createIndexBuffer() {
 
 void Model::init(BaseProject *bp, std::string file) {
 	BP = bp;
-	loadModel(file);
+	if (!file.empty())
+		loadModel(file);
 	createVertexBuffer();
 	createIndexBuffer();
 }
