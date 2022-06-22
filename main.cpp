@@ -13,6 +13,7 @@ struct UniformBufferObject
 	alignas(16) glm::mat4 proj;
 	alignas(16) glm::vec3 eyePos;
 	alignas(16) glm::vec3 lightDir;
+	alignas(16) glm::vec3 refl;
 };
 
 class Loader
@@ -183,8 +184,8 @@ protected:
 		doorTexture.init(this, TEXTURE_PATH + "Door.png");
 		wallTexture.init(this, TEXTURE_PATH + "Wall.png");
 		ceilingTexture.init(this, TEXTURE_PATH + "Ceiling.png");
-		copperKeyTexture.init(this, TEXTURE_PATH + "Ceiling.png");
-		goldKeyTexture.init(this, TEXTURE_PATH + "Ceiling.png");
+		copperKeyTexture.init(this, TEXTURE_PATH + "CopperKey.png");
+		goldKeyTexture.init(this, TEXTURE_PATH + "GoldKey.png");
 		leverTexture.init(this, TEXTURE_PATH + "Ceiling.png");
 		doorSideTexture.init(this, TEXTURE_PATH + "DoorSide.png");
 
@@ -380,17 +381,17 @@ protected:
 		ubo.lightDir = torchLightDir;
 
 		// CopperKey
-		updateObjectUniform(ubo, currentImage, &data, copperKey, glm::mat4(1.0f));
-		updateObjectUniform(ubo, currentImage, &data, copperKeyHole2, glm::mat4(1.0f));
+		updateObjectUniform(ubo, currentImage, &data, copperKey, glm::mat4(1.0f), 1.0f);
+		updateObjectUniform(ubo, currentImage, &data, copperKeyHole2, glm::mat4(1.0f), 1.0f);
 
 		// GoldKey
-		updateObjectUniform(ubo, currentImage, &data, goldKey, glm::mat4(1.0f));
-		updateObjectUniform(ubo, currentImage, &data, goldKeyHole4, glm::mat4(1.0f));
+		updateObjectUniform(ubo, currentImage, &data, goldKey, glm::mat4(1.0f), 1.0f);
+		updateObjectUniform(ubo, currentImage, &data, goldKeyHole4, glm::mat4(1.0f), 1.0f);
 
 		// Levers
-		updateObjectUniform(ubo, currentImage, &data, lever1, glm::mat4(1.0f));
-		updateObjectUniform(ubo, currentImage, &data, lever3, glm::mat4(1.0f));
-		updateObjectUniform(ubo, currentImage, &data, lever5, glm::mat4(1.0f));
+		updateObjectUniform(ubo, currentImage, &data, lever1, glm::mat4(1.0f), 1.0f);
+		updateObjectUniform(ubo, currentImage, &data, lever3, glm::mat4(1.0f), 1.0f);
+		updateObjectUniform(ubo, currentImage, &data, lever5, glm::mat4(1.0f), 1.0f);
 
 		// Doors
 		updateObjectUniform(ubo, currentImage, &data, doorSide, glm::mat4(1.0f));
@@ -426,6 +427,19 @@ protected:
 
 	void updateObjectUniform(UniformBufferObject &ubo, uint32_t currentImage, void **data, SceneObject &obj, glm::mat4 modelMatrix) {
 		ubo.model = modelMatrix;
+		ubo.refl = glm::vec3(0.0f);
+
+		// Here is where you actually update your uniforms
+		vkMapMemory(device, obj.DS.uniformBuffersMemory[0][currentImage], 0,
+					sizeof(ubo), 0, data);
+		memcpy(*data, &ubo, sizeof(ubo));
+		vkUnmapMemory(device, obj.DS.uniformBuffersMemory[0][currentImage]);
+	}
+
+	void updateObjectUniform(UniformBufferObject &ubo, uint32_t currentImage, void **data, SceneObject &obj, glm::mat4 modelMatrix, float refl) {
+		ubo.model = modelMatrix;
+		ubo.refl = glm::vec3(refl);
+		//std::cout << "REFL " << refl << std::endl;
 
 		// Here is where you actually update your uniforms
 		vkMapMemory(device, obj.DS.uniformBuffersMemory[0][currentImage], 0,
