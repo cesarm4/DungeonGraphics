@@ -31,7 +31,7 @@ void main() {
 	vec3 L = normalize(eyePos - fragPos);
 	vec3 N = normalize(fragNorm);
 	vec3 R = -reflect(L, N);
-	vec3 V = normalize(fragViewDir);
+	vec3 V = normalize(eyePos - fragPos);
 	
 	
 	// Lambert diffuse

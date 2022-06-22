@@ -3,14 +3,14 @@ GoldKey_Torus
 Doors_Cube
 GoldKeyHole4_Torus
 CopperKeyHole2_Torus
-Lever1_Cylinder
-Lever3_Cylinder
-Lever5_Cylinder
-Door5_Cube
+Lever1_Cylinder -> 3.0, 0.5, 3.5
+Lever3_Cylinder -> 9.5, 0.5, 4.0
+Lever5_Cylinder -> 4.5, 0.5, -1.0
+Door5_Cube -> 4.0 0.0 2.0
 Door4_Cube
-Door3_Cube
+Door3_Cube -> 9.0 0.0 3.0
 Door2_Cube
-Door1_Cube
+Door1_Cube -> 4.0 0.0 3.0
 Floor_Plane
 WallW_Plane
 WallE_Plane

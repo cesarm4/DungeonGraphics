@@ -40,6 +40,7 @@ public:
 		std::cout << "*****************SHAPES******************" << std::endl;
 		tinyobj::shape_t shape = shapes[objIndex];
 		std::cout << shape.name << std::endl;
+		
 		for (const auto &index : shape.mesh.indices)
 		{
 			Vertex vertex{};
@@ -71,14 +72,39 @@ public:
 	}
 };
 
-struct SceneObject
+class SceneObject
 {
+public:
 	Model model;
 	Texture texture;
 	DescriptorSet DS;
+	glm::vec3 position;
+	glm::vec3 rotationAxis;
+	float rotation;
+	glm::mat4 matrix;
 
 	void init(BaseProject *bp, DescriptorSetLayout *DSL1, Loader &loader, int index, Texture &text);
+	void init(BaseProject *bp, DescriptorSetLayout *DSL1, Loader &loader, int index, Texture &text, 
+	glm::vec3 pos, glm::vec3 rotAxis, float rot);
+
 	void cleanup();
+};
+
+class Interactable : public SceneObject 
+{
+public:
+	SceneObject* activate;
+	bool active;
+	bool set;
+
+	void init(BaseProject *bp, DescriptorSetLayout *DSL1, Loader &loader, int index, Texture &text, 
+	glm::vec3 pos, glm::vec3 rotAxis, float rot, SceneObject* act) 
+	{
+		SceneObject::init(bp, DSL1, loader, index, text, pos, rotAxis, rot);
+		activate = act;
+		active = false;
+		set = false;
+	}
 };
 
 void SceneObject::init(BaseProject *bp, DescriptorSetLayout *DSL1, Loader &loader, int index, Texture &text)
@@ -87,6 +113,20 @@ void SceneObject::init(BaseProject *bp, DescriptorSetLayout *DSL1, Loader &loade
 	model.init(bp, "");
 	texture = text;
 	DS.init(bp, DSL1, {{0, UNIFORM, sizeof(UniformBufferObject), nullptr}, {1, TEXTURE, 0, &texture}});
+	matrix = glm::mat4(1.0f);
+}
+
+void SceneObject::init(BaseProject *bp, DescriptorSetLayout *DSL1, Loader &loader, int index, Texture &text, 
+	glm::vec3 pos, glm::vec3 rotAxis, float rot)
+{
+	loader.loadModelFromIndex(model, index);
+	model.init(bp, "");
+	texture = text;
+	DS.init(bp, DSL1, {{0, UNIFORM, sizeof(UniformBufferObject), nullptr}, {1, TEXTURE, 0, &texture}});
+	position = pos;
+	rotationAxis = rotAxis;
+	rotation = rot;
+	matrix = glm::mat4(1.0f);
 }
 
 void SceneObject::cleanup()
@@ -114,9 +154,9 @@ protected:
 	SceneObject doorSide;
 	SceneObject goldKeyHole4; // Door4
 	SceneObject copperKeyHole2; // Door2
-	SceneObject lever1;
-	SceneObject lever3;
-	SceneObject lever5;
+	Interactable lever1;
+	Interactable lever3;
+	Interactable lever5;
 	SceneObject door5;
 	SceneObject door4;
 	SceneObject door3;
@@ -129,6 +169,7 @@ protected:
 	SceneObject wallS;
 	SceneObject ceiling;
 	std::vector<SceneObject> allObjects;
+	std::vector<Interactable*> interactables;
 
 	Texture floorTexture;
 	Texture doorTexture;
@@ -138,10 +179,6 @@ protected:
 	Texture goldKeyTexture;
 	Texture leverTexture;
 	Texture doorSideTexture;
-
-	// Game Variables
-	bool door1Open = false;
-	bool door1Set = false;
 	
 	// Lights
 	glm::vec3 torchLightDir;
@@ -186,7 +223,7 @@ protected:
 		ceilingTexture.init(this, TEXTURE_PATH + "Ceiling.png");
 		copperKeyTexture.init(this, TEXTURE_PATH + "CopperKey.png");
 		goldKeyTexture.init(this, TEXTURE_PATH + "GoldKey.png");
-		leverTexture.init(this, TEXTURE_PATH + "Ceiling.png");
+		leverTexture.init(this, TEXTURE_PATH + "Lever.png");
 		doorSideTexture.init(this, TEXTURE_PATH + "DoorSide.png");
 
 		// Do this for every object
@@ -197,15 +234,15 @@ protected:
 		copperKeyHole2.init(this, &DSL1, loader, 4, copperKeyTexture);
 
 		// Levers
-		lever1.init(this, &DSL1, loader, 5, leverTexture);
-		lever3.init(this, &DSL1, loader, 6, leverTexture);
-		lever5.init(this, &DSL1, loader, 7, leverTexture);
+		lever1.init(this, &DSL1, loader, 5, leverTexture, glm::vec3(3.0, 0.5, 3.5), glm::vec3(1.0f, 0.0f, 0.0f), -90.0f, &door1);
+		lever3.init(this, &DSL1, loader, 6, leverTexture, glm::vec3(9.5, 0.5, 4.0), glm::vec3(0.0f, 0.0f, 1.0f), 90.0f, &door3);
+		lever5.init(this, &DSL1, loader, 7, leverTexture, glm::vec3(4.5, 0.5, -1.0), glm::vec3(0.0f, 0.0f, 1.0f), 90.0f, &door5);
 
-		door5.init(this, &DSL1, loader, 8, doorTexture);
+		door5.init(this, &DSL1, loader, 8, doorTexture, glm::vec3(4.399166, 0.0, -2.0), glm::vec3(0.0f, 1.0f, 0.0f), -90.0f);
 		door4.init(this, &DSL1, loader, 9, doorTexture);
-		door3.init(this, &DSL1, loader, 10, doorTexture);
+		door3.init(this, &DSL1, loader, 10, doorTexture, glm::vec3(9.399166, 0.0, 3.0), glm::vec3(0.0f, 1.0f, 0.0f), -90.0f);
 		door2.init(this, &DSL1, loader, 11, doorTexture);
-		door1.init(this, &DSL1, loader, 12, doorTexture);
+		door1.init(this, &DSL1, loader, 12, doorTexture, glm::vec3(4, 0, 3.399166), glm::vec3(0.0f, 1.0f, 0.0f), -90.0f);
 
 		floor.init(this, &DSL1, loader, 13, floorTexture);
 		wallW.init(this, &DSL1, loader, 14, wallTexture);
@@ -216,6 +253,8 @@ protected:
 
 		allObjects.insert(allObjects.end(), {copperKey, goldKey, doorSide, goldKeyHole4, 
 		copperKeyHole2, lever1, lever3, lever5, door5, door4, door3, door2, door1, floor, wallW, wallE, wallN, wallS, ceiling});
+
+		interactables.insert(interactables.end(), {&lever1, &lever3, &lever5});
 	}
 
 	// Here you destroy all the objects you created!
@@ -316,11 +355,12 @@ protected:
 			CamAng.z += deltaT * ROT_SPEED;
 		}
 
-		glm::mat3 CamDir = glm::mat3(glm::rotate(glm::mat4(1.0f), CamAng.y, glm::vec3(0.0f, 1.0f, 0.0f))) *
+		glm::mat3 CamMatDir = glm::mat3(glm::rotate(glm::mat4(1.0f), CamAng.y, glm::vec3(0.0f, 1.0f, 0.0f))) *
 						   glm::mat3(glm::rotate(glm::mat4(1.0f), CamAng.x, glm::vec3(1.0f, 0.0f, 0.0f))) *
 						   glm::mat3(glm::rotate(glm::mat4(1.0f), CamAng.z, glm::vec3(0.0f, 0.0f, 1.0f)));
 
-		torchLightDir = CamDir * glm::vec3(0.0f, 0.0f, 1.0f);
+		torchLightDir = CamMatDir * glm::vec3(0.0f, 0.0f, 1.0f);
+		CamDir = CamMatDir * glm::vec3(0.0f, 0.0f, 1.0f);
 
 		if (glfwGetKey(window, GLFW_KEY_A))
 		{
@@ -341,9 +381,53 @@ protected:
 
 		//std::cout << "Cam Pos: " << CamPos[0] << " " << CamPos[1] << " " << CamPos[2] << "\n";
 		
-		glm::mat4 CamMat = glm::translate(glm::transpose(glm::mat4(CamDir)), -CamPos);
-
+		glm::mat4 CamMat = glm::translate(glm::transpose(glm::mat4(CamMatDir)), -CamPos);
+		
 		return CamMat;
+	}
+
+	void checkInteraction() 
+	{
+		for (Interactable* obj: interactables)
+		{
+			float distance = glm::distance(CamPos, obj->position);
+
+			if (distance < 0.9) 
+			{
+				if (glfwGetKey(window, GLFW_KEY_P) == GLFW_PRESS && !obj->set)
+				{
+					obj->set = true;
+					obj->active = !obj->active;
+
+					if (obj->active)
+					{
+						glm::mat4 T1 = glm::translate(glm::mat4(1), obj->position);
+						glm::mat4 R1 = glm::rotate(glm::mat4(1), glm::radians(obj->rotation), obj->rotationAxis); // Principal transformation
+						glm::mat4 MT1 = T1 * R1 * glm::inverse(T1);
+
+						obj->matrix = MT1;
+
+						glm::mat4 T2 = glm::translate(glm::mat4(1), obj->activate->position);
+						glm::mat4 R2 = glm::rotate(glm::mat4(1), glm::radians(obj->activate->rotation), obj->activate->rotationAxis); // Principal transformation
+						glm::mat4 MT2 = T2 * R2 * glm::inverse(T2);
+
+						obj->activate->matrix = MT2;
+					}
+					else
+					{
+						obj->matrix = glm::mat4(1.0f);
+						obj->activate->matrix = glm::mat4(1.0f);
+					}
+				}
+			}
+
+			if (glfwGetKey(window, GLFW_KEY_P) == GLFW_RELEASE) 
+			{
+				obj->set = false;
+			}
+		}
+
+		
 	}
 
 	// Here is where you update the uniforms.
@@ -356,15 +440,7 @@ protected:
 
 		glfwSetInputMode(window, GLFW_STICKY_MOUSE_BUTTONS, GLFW_TRUE);
 
-		if (glfwGetKey(window, GLFW_KEY_P) == GLFW_PRESS && !door1Set)
-		{
-			door1Open = !door1Open;
-			door1Set = true;
-		}
-		if (glfwGetKey(window, GLFW_KEY_P) == GLFW_RELEASE) 
-		{
-			door1Set = false;
-		}
+		checkInteraction();
 
 		UniformBufferObject ubo{};
 
@@ -399,17 +475,7 @@ protected:
 		updateObjectUniform(ubo, currentImage, &data, door4, glm::mat4(1.0f));
 		updateObjectUniform(ubo, currentImage, &data, door3, glm::mat4(1.0f));
 		updateObjectUniform(ubo, currentImage, &data, door2, glm::mat4(1.0f));
-
-		glm::mat4 door1Transform = glm::mat4(1.0f);
-		if (door1Open)
-		{
-			glm::mat4 T1 = glm::translate(glm::mat4(1), glm::vec3(4, 0, 3.399166));
-			glm::mat4 Rx1 = glm::rotate(glm::mat4(1), glm::radians(-90.0f), glm::vec3(0.0f, 1.0f, 0.0f)); // Principal transformation
-			glm::mat4 MT1 = T1 * Rx1 * glm::inverse(T1);
-
-			door1Transform = MT1;
-		}
-		updateObjectUniform(ubo, currentImage, &data, door1, door1Transform);
+		updateObjectUniform(ubo, currentImage, &data, door1, glm::mat4(1.0f));
 
 		// Floor
 		updateObjectUniform(ubo, currentImage, &data, floor, glm::mat4(1.0f));
@@ -426,7 +492,7 @@ protected:
 	}
 
 	void updateObjectUniform(UniformBufferObject &ubo, uint32_t currentImage, void **data, SceneObject &obj, glm::mat4 modelMatrix) {
-		ubo.model = modelMatrix;
+		ubo.model = obj.matrix;
 		ubo.refl = glm::vec3(0.0f);
 
 		// Here is where you actually update your uniforms
@@ -437,7 +503,7 @@ protected:
 	}
 
 	void updateObjectUniform(UniformBufferObject &ubo, uint32_t currentImage, void **data, SceneObject &obj, glm::mat4 modelMatrix, float refl) {
-		ubo.model = modelMatrix;
+		ubo.model = obj.matrix;
 		ubo.refl = glm::vec3(refl);
 		//std::cout << "REFL " << refl << std::endl;
 
