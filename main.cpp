@@ -82,6 +82,8 @@ public:
 	glm::vec3 rotationAxis;
 	float rotation;
 	glm::mat4 matrix;
+	int x; 
+	int y;
 
 	void init(BaseProject *bp, DescriptorSetLayout *DSL1, Loader &loader, int index, Texture &text);
 	void init(BaseProject *bp, DescriptorSetLayout *DSL1, Loader &loader, int index, Texture &text, 
@@ -101,6 +103,21 @@ public:
 	glm::vec3 pos, glm::vec3 rotAxis, float rot, SceneObject* act) 
 	{
 		SceneObject::init(bp, DSL1, loader, index, text, pos, rotAxis, rot);
+		activate = act;
+		active = false;
+		set = false;
+	}
+};
+
+class KeyHole : public Interactable 
+{
+public:
+	bool hasKey = false;
+
+	void init(BaseProject *bp, DescriptorSetLayout *DSL1, Loader &loader, int index, Texture &text, 
+	glm::vec3 pos, SceneObject* act) 
+	{
+		SceneObject::init(bp, DSL1, loader, index, text, pos, glm::vec3(0.0f), 0.0f);
 		activate = act;
 		active = false;
 		set = false;
@@ -152,8 +169,8 @@ protected:
 	SceneObject copperKey;
 	SceneObject goldKey;
 	SceneObject doorSide;
-	SceneObject goldKeyHole4; // Door4
-	SceneObject copperKeyHole2; // Door2
+	KeyHole goldKeyHole4; // Door4
+	KeyHole copperKeyHole2; // Door2
 	Interactable lever1;
 	Interactable lever3;
 	Interactable lever5;
@@ -170,6 +187,7 @@ protected:
 	SceneObject ceiling;
 	std::vector<SceneObject> allObjects;
 	std::vector<Interactable*> interactables;
+	std::vector<KeyHole*> keyHoles;
 
 	Texture floorTexture;
 	Texture doorTexture;
@@ -183,13 +201,48 @@ protected:
 	// Lights
 	glm::vec3 torchLightDir;
 
+	char map[24][25] = {	
+		{'*','*','*','*','*','*','*','*','*','*','*','*','*','*','*','*','*','*','*','*','*','*','*','*'},
+		{'*','*','*','*','*','*','*','*','*','*','*','*','*','*','*','*',' ',' ','*','*','*','*','*','*'},
+		{'*','*','*','*','*','*','*','*','*','*','*','*','*','*','*','*',' ',' ','*','*','*','*','*','*'},
+		{'*','*','*','*','*','*','*','*','*','*','*','*',' ',' ',' ','*','*',' ',' ','*','*','*','*','*'},
+		{'*','*','*','*','*','*','*','*','*','*','*','*',' ','*',' ',' ',' ','*',' ','*','*','*','*','*'},
+		{'*','*','*','*','*','*',' ','*','*','*','*','*',' ','*','*',' ',' ',' ',' ',' ','*','*','*','*'},
+		{'*','*','*','*','*','*',' ','*','*','*',' ',' ',' ',' ',' ','*','*','*',' ',' ','*','*','*','*'},
+		{'*','*','*','*','*','*',' ','*','*','*','d','*','*','*',' ','*',' ','*',' ','*','*','*','*','*'},
+		{'*','*','*','*','*','*','*','*','*',' ',' ','*',' ',' ',' ','*',' ','*',' ','*','*','*','*','*'},
+		{'*','*','*','*','*','*','o',' ',' ',' ',' ',' ','*',' ',' ','*',' ',' ',' ','*','*','*','*','*'},
+		{'*','*','*','*','*','*','*','*','*',' ',' ','*','*',' ','*',' ',' ','*',' ','*','*','*','*','*'},
+		{'*','*','*','*','*','*',' ',' ',' ','*','*',' ','*',' ','*',' ',' ','*',' ','*','*','*','*','*'},
+		{'*','*','*','*',' ',' ',' ',' ',' ',' ','d',' ',' ',' ','*','d','*',' ',' ',' ','*',' ','*','*'},
+		{'*','*','*','*',' ','*',' ',' ',' ','*','*',' ','*','*',' ',' ','*','*','d','*',' ',' ',' ','*'},
+		{'*','*','*','*',' ','*','*','*','*','*','*','*',' ',' ',' ','*','*',' ',' ',' ','*',' ','*','*'},
+		{'*','*',' ',' ',' ',' ',' ',' ',' ',' ',' ',' ',' ','*','*',' ','*',' ',' ',' ','*',' ','*','*'},
+		{'*','*',' ','*',' ','*','*','*','*','*','*','*','*','*','*',' ',' ','*',' ','*',' ',' ','*','*'},
+		{'*','*',' ','*',' ',' ',' ',' ',' ',' ',' ',' ',' ','d','f','*',' ',' ',' ',' ',' ','*','*','*'},
+		{'*','*',' ','*',' ',' ',' ','*','*','*',' ',' ',' ','*','*','*','*','*',' ','*','*','*','*','*'},
+		{'*','*',' ','*','*','*','*','*',' ','*','*','*','*',' ',' ',' ',' ',' ',' ','*','*','*','*','*'},
+		{'*',' ',' ',' ','*','*','*',' ',' ',' ',' ',' ',' ',' ','*','*','*','*','*','*','*','*','*','*'},
+		{'*',' ',' ',' ',' ',' ',' ',' ','*','*','*','*','*','*','*','*','*','*','*','*','*','*','*','*'},
+		{'*',' ',' ',' ','*','*','*','*','*','*','*','*','*','*','*','*','*','*','*','*','*','*','*','*'},
+		{'*','*','*','*','*','*','*','*','*','*','*','*','*','*','*','*','*','*','*','*','*','*','*','*'}
+	};
+
+	int mapWidth = 25;
+	int mapHeight = 24;
+
+	const float checkRadius = 0.15;
+	const int checkSteps = 12;
+
+	float distanceFromKey = 1.5f;
+
 	// Here you set the main application parameters
 	void setWindowParameters()
 	{
 		// window size, titile and initial background
-		windowWidth = 800;
-		windowHeight = 600;
-		windowTitle = "My Project";
+		windowWidth = 1920;
+		windowHeight = 1080;
+		windowTitle = "Dungeon";
 		initialBackgroundColor = {0.0f, 0.0f, 0.0f, 1.0f};
 
 		// Descriptor pool sizes
@@ -227,22 +280,22 @@ protected:
 		doorSideTexture.init(this, TEXTURE_PATH + "DoorSide.png");
 
 		// Do this for every object
-		copperKey.init(this, &DSL1, loader, 0, copperKeyTexture);
-		goldKey.init(this, &DSL1, loader, 1, goldKeyTexture);
+		copperKey.init(this, &DSL1, loader, 0, copperKeyTexture, glm::vec3(15.0, 0.0, 3.0), glm::vec3(0.0f), 0.0f);
+		goldKey.init(this, &DSL1, loader, 1, goldKeyTexture, glm::vec3(10.0, 0.0, -8.0), glm::vec3(0.0f), 0.0f);
 		doorSide.init(this, &DSL1, loader, 2, doorSideTexture);
-		goldKeyHole4.init(this, &DSL1, loader, 3, goldKeyTexture);
-		copperKeyHole2.init(this, &DSL1, loader, 4, copperKeyTexture);
+		goldKeyHole4.init(this, &DSL1, loader, 3, goldKeyTexture, glm::vec3(11.55, 0.5, 3.95), &door4);
+		copperKeyHole2.init(this, &DSL1, loader, 4, copperKeyTexture, glm::vec3(6.95, 0.5, 8.45), &door2);
 
 		// Levers
 		lever1.init(this, &DSL1, loader, 5, leverTexture, glm::vec3(3.0, 0.5, 3.5), glm::vec3(1.0f, 0.0f, 0.0f), -90.0f, &door1);
 		lever3.init(this, &DSL1, loader, 6, leverTexture, glm::vec3(9.5, 0.5, 4.0), glm::vec3(0.0f, 0.0f, 1.0f), 90.0f, &door3);
 		lever5.init(this, &DSL1, loader, 7, leverTexture, glm::vec3(4.5, 0.5, -1.0), glm::vec3(0.0f, 0.0f, 1.0f), 90.0f, &door5);
 
-		door5.init(this, &DSL1, loader, 8, doorTexture, glm::vec3(4.399166, 0.0, -2.0), glm::vec3(0.0f, 1.0f, 0.0f), -90.0f);
-		door4.init(this, &DSL1, loader, 9, doorTexture);
-		door3.init(this, &DSL1, loader, 10, doorTexture, glm::vec3(9.399166, 0.0, 3.0), glm::vec3(0.0f, 1.0f, 0.0f), -90.0f);
-		door2.init(this, &DSL1, loader, 11, doorTexture);
-		door1.init(this, &DSL1, loader, 12, doorTexture, glm::vec3(4, 0, 3.399166), glm::vec3(0.0f, 1.0f, 0.0f), -90.0f);
+		door5.init(this, &DSL1, loader, 8, doorTexture, glm::vec3(4.4, 0.0, -2.0), glm::vec3(0.0f, 1.0f, 0.0f), -90.0f);
+		door4.init(this, &DSL1, loader, 9, doorTexture, glm::vec3(12.4, 0.0, 4.0), glm::vec3(0.0f, 1.0f, 0.0f), 90.0f);
+		door3.init(this, &DSL1, loader, 10, doorTexture, glm::vec3(9.4, 0.0, 3.0), glm::vec3(0.0f, 1.0f, 0.0f), -90.0f);
+		door2.init(this, &DSL1, loader, 11, doorTexture, glm::vec3(7.0, 0.0, 7.6), glm::vec3(0.0f, 1.0f, 0.0f), 90.0f);
+		door1.init(this, &DSL1, loader, 12, doorTexture, glm::vec3(4, 0, 3.4), glm::vec3(0.0f, 1.0f, 0.0f), -90.0f);
 
 		floor.init(this, &DSL1, loader, 13, floorTexture);
 		wallW.init(this, &DSL1, loader, 14, wallTexture);
@@ -255,6 +308,7 @@ protected:
 		copperKeyHole2, lever1, lever3, lever5, door5, door4, door3, door2, door1, floor, wallW, wallE, wallN, wallS, ceiling});
 
 		interactables.insert(interactables.end(), {&lever1, &lever3, &lever5});
+		keyHoles.insert(keyHoles.end(), {&goldKeyHole4, &copperKeyHole2});
 	}
 
 	// Here you destroy all the objects you created!
@@ -305,6 +359,32 @@ protected:
 		}
 	}
 
+	// Conversion from 3D coordinates to map coordinates
+	glm::ivec2 posToMap(float x, float y) {
+		// (9, 6) is the initial position of the player in the map
+		int mapX = round(fmax(0.0f, fmin(mapWidth-1,  (x+6))));
+		int mapY = round(fmax(0.0f, fmin(mapHeight-1, (y+9))));
+
+		return glm::ivec2(mapX, mapY);
+	}
+
+	bool canStepPoint(float x, float y) {
+		glm::ivec2 mapPos = posToMap(x, y);
+		int pix = (int)map[mapPos.y][mapPos.x];
+		//std::cout << pixX << " " << pixY << " " << x << " " << y << " \t P = " << pix << "\n";		
+		return pix != '*' && pix != 'd';
+	}
+
+	bool canStep(float x, float y) {
+		for(int i = 0; i < checkSteps; i++) {
+			if(!canStepPoint(x + cos(6.2832 * i / (float)checkSteps) * checkRadius,
+							 y + sin(6.2832 * i / (float)checkSteps) * checkRadius)) {
+				return false;
+			}
+		}
+		return true;
+	}
+
 	glm::mat4 CameraMovement(float time)
 	{
 		static float lastTime = 0.0f;
@@ -340,11 +420,17 @@ protected:
 		}
 		if (glfwGetKey(window, GLFW_KEY_UP))
 		{
-			CamAng.x += deltaT * ROT_SPEED;
+			if (CamAng.x < glm::radians(90.0f))
+			{
+				CamAng.x += deltaT * ROT_SPEED;
+			}
 		}
 		if (glfwGetKey(window, GLFW_KEY_DOWN))
 		{
-			CamAng.x -= deltaT * ROT_SPEED;
+			if (CamAng.x > glm::radians(-90.0f))
+			{
+				CamAng.x -= deltaT * ROT_SPEED;
+			}
 		}
 		if (glfwGetKey(window, GLFW_KEY_Q))
 		{
@@ -361,6 +447,8 @@ protected:
 
 		torchLightDir = CamMatDir * glm::vec3(0.0f, 0.0f, 1.0f);
 		CamDir = CamMatDir * glm::vec3(0.0f, 0.0f, 1.0f);
+
+		glm::vec3 oldCamPos = CamPos;
 
 		if (glfwGetKey(window, GLFW_KEY_A))
 		{
@@ -380,7 +468,10 @@ protected:
 		}
 
 		//std::cout << "Cam Pos: " << CamPos[0] << " " << CamPos[1] << " " << CamPos[2] << "\n";
-		
+		if(!canStep(CamPos.x, CamPos.z)) {
+			CamPos = oldCamPos;
+		}
+
 		glm::mat4 CamMat = glm::translate(glm::transpose(glm::mat4(CamMatDir)), -CamPos);
 		
 		return CamMat;
@@ -398,25 +489,35 @@ protected:
 				{
 					obj->set = true;
 					obj->active = !obj->active;
-
+					
+					// Open
 					if (obj->active)
 					{
+						// Lever
 						glm::mat4 T1 = glm::translate(glm::mat4(1), obj->position);
 						glm::mat4 R1 = glm::rotate(glm::mat4(1), glm::radians(obj->rotation), obj->rotationAxis); // Principal transformation
 						glm::mat4 MT1 = T1 * R1 * glm::inverse(T1);
 
 						obj->matrix = MT1;
 
+						// Door
 						glm::mat4 T2 = glm::translate(glm::mat4(1), obj->activate->position);
 						glm::mat4 R2 = glm::rotate(glm::mat4(1), glm::radians(obj->activate->rotation), obj->activate->rotationAxis); // Principal transformation
 						glm::mat4 MT2 = T2 * R2 * glm::inverse(T2);
+						
+						glm::ivec2 mapPos = posToMap(obj->activate->position.x, obj->activate->position.z);
+						map[mapPos.y][mapPos.x] = ' ';
 
 						obj->activate->matrix = MT2;
 					}
+					// Close
 					else
 					{
 						obj->matrix = glm::mat4(1.0f);
 						obj->activate->matrix = glm::mat4(1.0f);
+
+						glm::ivec2 mapPos = posToMap(obj->activate->position.x, obj->activate->position.z);
+						map[mapPos.y][mapPos.x] = 'd';
 					}
 				}
 			}
@@ -426,8 +527,79 @@ protected:
 				obj->set = false;
 			}
 		}
+	}
+	
+	void checkKeyHoles()
+	{
+		for (KeyHole* obj: keyHoles)
+		{
+			float distance = glm::distance(CamPos, obj->position);
 
-		
+			//std::cout << "distanza serratura " << distance << std::endl;
+			if (distance < 2.0) 
+			{
+				//std::cout << "hai chiave " << obj->hasKey << std::endl;
+				if (obj->hasKey && glfwGetKey(window, GLFW_KEY_P) == GLFW_PRESS && !obj->set)
+				{
+					std::cout << "Apriti porta" << std::endl;
+					obj->set = true;
+					obj->active = !obj->active;
+					
+					// Open
+					if (obj->active)
+					{
+						// Door
+						glm::mat4 T2 = glm::translate(glm::mat4(1), obj->activate->position);
+						glm::mat4 R2 = glm::rotate(glm::mat4(1), glm::radians(obj->activate->rotation), obj->activate->rotationAxis); // Principal transformation
+						glm::mat4 MT2 = T2 * R2 * glm::inverse(T2);
+						
+						glm::ivec2 mapPos = posToMap(obj->activate->position.x, obj->activate->position.z);
+						map[mapPos.y][mapPos.x] = ' ';
+
+						obj->activate->matrix = MT2;
+					}
+					// Close
+					else
+					{
+						obj->matrix = glm::mat4(1.0f);
+						obj->activate->matrix = glm::mat4(1.0f);
+
+						glm::ivec2 mapPos = posToMap(obj->activate->position.x, obj->activate->position.z);
+						map[mapPos.y][mapPos.x] = 'd';
+					}
+				}
+			}
+
+			if (glfwGetKey(window, GLFW_KEY_P) == GLFW_RELEASE) 
+			{
+				obj->set = false;
+			}
+		}
+	}
+
+	void checkKeys()
+	{
+		float distance = glm::distance(CamPos, goldKey.position);
+
+		if (distance < distanceFromKey) 
+		{
+			if (glfwGetKey(window, GLFW_KEY_P) == GLFW_PRESS)
+			{
+				goldKey.matrix = glm::translate(glm::mat4(1), glm::vec3(100, 100, 100));
+				goldKeyHole4.hasKey = true;
+			}
+		}
+
+		distance = glm::distance(CamPos, copperKey.position);
+
+		if (distance < distanceFromKey) 
+		{
+			if (glfwGetKey(window, GLFW_KEY_P) == GLFW_PRESS)
+			{
+				copperKey.matrix = glm::translate(glm::mat4(1), glm::vec3(100, 100, 100));
+				copperKeyHole2.hasKey = true;
+			}
+		}
 	}
 
 	// Here is where you update the uniforms.
@@ -441,6 +613,8 @@ protected:
 		glfwSetInputMode(window, GLFW_STICKY_MOUSE_BUTTONS, GLFW_TRUE);
 
 		checkInteraction();
+		checkKeyHoles();
+		checkKeys();
 
 		UniformBufferObject ubo{};
 

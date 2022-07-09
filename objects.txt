@@ -1,15 +1,15 @@
-CopperKey_Torus
-GoldKey_Torus
+CopperKey_Torus -> 15.0 0.0 3.0
+GoldKey_Torus -> 10.0, 0.0, -8.0
 Doors_Cube
-GoldKeyHole4_Torus
-CopperKeyHole2_Torus
+GoldKeyHole4_Torus -> 11.55, 0.5, 3.95
+CopperKeyHole2_Torus -> 6.95, 0.5, 8.45
 Lever1_Cylinder -> 3.0, 0.5, 3.5
 Lever3_Cylinder -> 9.5, 0.5, 4.0
 Lever5_Cylinder -> 4.5, 0.5, -1.0
 Door5_Cube -> 4.0 0.0 2.0
-Door4_Cube
+Door4_Cube -> 12.0, 0.0, 4.0
 Door3_Cube -> 9.0 0.0 3.0
-Door2_Cube
+Door2_Cube -> 7.0, 0.0, 8.0
 Door1_Cube -> 4.0 0.0 3.0
 Floor_Plane
 WallW_Plane

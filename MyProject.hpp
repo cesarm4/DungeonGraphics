@@ -333,7 +333,7 @@ protected:
 	std::vector<VkFence> imagesInFlight;
 	
 	glm::vec3 CamAng = glm::vec3(0.0f);
-	glm::vec3 CamPos = glm::vec3(0.0f, 0.5f, 4.0f);
+	glm::vec3 CamPos = glm::vec3(0.0f, 0.5f, 0.0f);
 	glm::vec3 CamDir = glm::vec3(0.0f, 0.0f, 1.0f);
 
 	// Lesson 12
