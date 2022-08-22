@@ -185,18 +185,21 @@ protected:
 	SceneObject wallN;
 	SceneObject wallS;
 	SceneObject ceiling;
+	SceneObject endPlane;
 	std::vector<SceneObject> allObjects;
 	std::vector<Interactable*> interactables;
 	std::vector<KeyHole*> keyHoles;
 
 	Texture floorTexture;
 	Texture doorTexture;
+	Texture doorFlipTexture;
 	Texture wallTexture;
 	Texture ceilingTexture;
 	Texture copperKeyTexture;
 	Texture goldKeyTexture;
 	Texture leverTexture;
 	Texture doorSideTexture;
+	Texture endTexture;
 	
 	// Lights
 	glm::vec3 torchLightDir;
@@ -240,15 +243,15 @@ protected:
 	void setWindowParameters()
 	{
 		// window size, titile and initial background
-		windowWidth = 1920;
-		windowHeight = 1080;
+		windowWidth = 800;
+		windowHeight = 600;
 		windowTitle = "Dungeon";
 		initialBackgroundColor = {0.0f, 0.0f, 0.0f, 1.0f};
 
 		// Descriptor pool sizes
-		uniformBlocksInPool = 19;
-		texturesInPool = 19;
-		setsInPool = 19;
+		uniformBlocksInPool = 20;
+		texturesInPool = 20;
+		setsInPool = 20;
 	}
 
 	// Here you load and setup all your Vulkan objects
@@ -268,16 +271,18 @@ protected:
 		P1.init(this, "shaders/vert.spv", "shaders/frag.spv", {&DSL1});
 
 		// Models, textures and Descriptors (values assigned to the uniforms)
-		Loader loader = Loader(MODEL_PATH + "Dungeon.diff3.obj");
+		Loader loader = Loader(MODEL_PATH + "DungeonEnd.diff3.obj");
 
-		floorTexture.init(this, TEXTURE_PATH + "Floor.png");
-		doorTexture.init(this, TEXTURE_PATH + "Door.png");
-		wallTexture.init(this, TEXTURE_PATH + "Wall.png");
-		ceilingTexture.init(this, TEXTURE_PATH + "Ceiling.png");
+		floorTexture.init(this, TEXTURE_PATH + "terra.png");
+		doorTexture.init(this, TEXTURE_PATH + "wood_door.jpg");
+		doorFlipTexture.init(this, TEXTURE_PATH + "wood_door_flip.jpg");
+		wallTexture.init(this, TEXTURE_PATH + "muro_rosso.jpg");
+		ceilingTexture.init(this, TEXTURE_PATH + "trak_tile_red.jpg");
 		copperKeyTexture.init(this, TEXTURE_PATH + "CopperKey.png");
 		goldKeyTexture.init(this, TEXTURE_PATH + "GoldKey.png");
 		leverTexture.init(this, TEXTURE_PATH + "Lever.png");
-		doorSideTexture.init(this, TEXTURE_PATH + "DoorSide.png");
+		doorSideTexture.init(this, TEXTURE_PATH + "DoorSide2.png");
+		endTexture.init(this, TEXTURE_PATH + "end.png");
 
 		// Do this for every object
 		copperKey.init(this, &DSL1, loader, 0, copperKeyTexture, glm::vec3(15.0, 0.0, 3.0), glm::vec3(0.0f), 0.0f);
@@ -291,11 +296,11 @@ protected:
 		lever3.init(this, &DSL1, loader, 6, leverTexture, glm::vec3(9.5, 0.5, 4.0), glm::vec3(0.0f, 0.0f, 1.0f), 90.0f, &door3);
 		lever5.init(this, &DSL1, loader, 7, leverTexture, glm::vec3(4.5, 0.5, -1.0), glm::vec3(0.0f, 0.0f, 1.0f), 90.0f, &door5);
 
-		door5.init(this, &DSL1, loader, 8, doorTexture, glm::vec3(4.4, 0.0, -2.0), glm::vec3(0.0f, 1.0f, 0.0f), -90.0f);
+		door5.init(this, &DSL1, loader, 8, doorFlipTexture, glm::vec3(4.4, 0.0, -2.0), glm::vec3(0.0f, 1.0f, 0.0f), -90.0f);
 		door4.init(this, &DSL1, loader, 9, doorTexture, glm::vec3(12.4, 0.0, 4.0), glm::vec3(0.0f, 1.0f, 0.0f), 90.0f);
-		door3.init(this, &DSL1, loader, 10, doorTexture, glm::vec3(9.4, 0.0, 3.0), glm::vec3(0.0f, 1.0f, 0.0f), -90.0f);
+		door3.init(this, &DSL1, loader, 10, doorFlipTexture, glm::vec3(9.4, 0.0, 3.0), glm::vec3(0.0f, 1.0f, 0.0f), -90.0f);
 		door2.init(this, &DSL1, loader, 11, doorTexture, glm::vec3(7.0, 0.0, 7.6), glm::vec3(0.0f, 1.0f, 0.0f), 90.0f);
-		door1.init(this, &DSL1, loader, 12, doorTexture, glm::vec3(4, 0, 3.4), glm::vec3(0.0f, 1.0f, 0.0f), -90.0f);
+		door1.init(this, &DSL1, loader, 12, doorFlipTexture, glm::vec3(4, 0, 3.4), glm::vec3(0.0f, 1.0f, 0.0f), -90.0f);
 
 		floor.init(this, &DSL1, loader, 13, floorTexture);
 		wallW.init(this, &DSL1, loader, 14, wallTexture);
@@ -303,9 +308,10 @@ protected:
 		wallN.init(this, &DSL1, loader, 16, wallTexture);
 		wallS.init(this, &DSL1, loader, 17, wallTexture);
 		ceiling.init(this, &DSL1, loader, 18, ceilingTexture);
+		endPlane.init(this, &DSL1, loader, 19, endTexture);
 
 		allObjects.insert(allObjects.end(), {copperKey, goldKey, doorSide, goldKeyHole4, 
-		copperKeyHole2, lever1, lever3, lever5, door5, door4, door3, door2, door1, floor, wallW, wallE, wallN, wallS, ceiling});
+		copperKeyHole2, lever1, lever3, lever5, door5, door4, door3, door2, door1, floor, wallW, wallE, wallN, wallS, ceiling, endPlane});
 
 		interactables.insert(interactables.end(), {&lever1, &lever3, &lever5});
 		keyHoles.insert(keyHoles.end(), {&goldKeyHole4, &copperKeyHole2});
@@ -431,14 +437,6 @@ protected:
 			{
 				CamAng.x -= deltaT * ROT_SPEED;
 			}
-		}
-		if (glfwGetKey(window, GLFW_KEY_Q))
-		{
-			CamAng.z -= deltaT * ROT_SPEED;
-		}
-		if (glfwGetKey(window, GLFW_KEY_E))
-		{
-			CamAng.z += deltaT * ROT_SPEED;
 		}
 
 		glm::mat3 CamMatDir = glm::mat3(glm::rotate(glm::mat4(1.0f), CamAng.y, glm::vec3(0.0f, 1.0f, 0.0f))) *
@@ -585,7 +583,6 @@ protected:
 		{
 			if (glfwGetKey(window, GLFW_KEY_P) == GLFW_PRESS)
 			{
-				goldKey.matrix = glm::translate(glm::mat4(1), glm::vec3(100, 100, 100));
 				goldKeyHole4.hasKey = true;
 			}
 		}
@@ -596,7 +593,6 @@ protected:
 		{
 			if (glfwGetKey(window, GLFW_KEY_P) == GLFW_PRESS)
 			{
-				copperKey.matrix = glm::translate(glm::mat4(1), glm::vec3(100, 100, 100));
 				copperKeyHole2.hasKey = true;
 			}
 		}
@@ -631,10 +627,60 @@ protected:
 		ubo.lightDir = torchLightDir;
 
 		// CopperKey
+		if (copperKeyHole2.hasKey)
+		{
+			glm::vec3 hor = glm::vec3(glm::rotate(glm::mat4(1.0f), CamAng.y, glm::vec3(0.0f, 1.0f, 0.0f)) * glm::vec4(1, 0, 0, 1));
+
+			glm::vec3 ver = glm::mat3(glm::rotate(glm::mat4(1.0f), CamAng.y, glm::vec3(0.0f, 1.0f, 0.0f))) *
+						   glm::mat3(glm::rotate(glm::mat4(1.0f), CamAng.x, glm::vec3(1.0f, 0.0f, 0.0f))) *
+						   //glm::mat3(glm::rotate(glm::mat4(1.0f), CamAng.z, glm::vec3(0.0f, 0.0f, 1.0f))) * 
+						   glm::vec3(0, 1, 0);
+
+			glm::vec3 distance = (CamPos - 0.13f * CamDir + 0.045f*hor - 0.045f*ver) - copperKey.position;
+
+			glm::mat4 T1 = glm::translate(glm::mat4(1), distance);
+			glm::mat4 Torigin = glm::translate(glm::mat4(1), copperKey.position);
+			glm::mat4 R1 = glm::rotate(glm::mat4(1), glm::radians(90.0f), glm::vec3(0, 1, 0));
+			glm::mat4 R2 = glm::rotate(glm::mat4(1), glm::radians(90.0f), glm::vec3(0, 0, 1));
+
+			glm::mat4 R3 = glm::mat3(glm::rotate(glm::mat4(1.0f), CamAng.y, glm::vec3(0.0f, 1.0f, 0.0f))) *
+						   glm::mat3(glm::rotate(glm::mat4(1.0f), CamAng.x, glm::vec3(1.0f, 0.0f, 0.0f)));
+						   //glm::mat3(glm::rotate(glm::mat4(1.0f), CamAng.z, glm::vec3(0.0f, 0.0f, 1.0f)));
+
+			glm::mat4 S1 = glm::scale(glm::mat4(1), glm::vec3(0.08f));
+
+			copperKey.matrix = T1 * Torigin * R3 * R1 * R2 * S1 * glm::inverse(Torigin);
+
+		}
 		updateObjectUniform(ubo, currentImage, &data, copperKey, glm::mat4(1.0f), 1.0f);
 		updateObjectUniform(ubo, currentImage, &data, copperKeyHole2, glm::mat4(1.0f), 1.0f);
 
 		// GoldKey
+		if (goldKeyHole4.hasKey)
+		{
+			glm::vec3 hor = glm::vec3(glm::rotate(glm::mat4(1.0f), CamAng.y, glm::vec3(0.0f, 1.0f, 0.0f)) * glm::vec4(1, 0, 0, 1));
+
+			glm::vec3 ver = glm::mat3(glm::rotate(glm::mat4(1.0f), CamAng.y, glm::vec3(0.0f, 1.0f, 0.0f))) *
+						   glm::mat3(glm::rotate(glm::mat4(1.0f), CamAng.x, glm::vec3(1.0f, 0.0f, 0.0f))) *
+						   glm::mat3(glm::rotate(glm::mat4(1.0f), CamAng.z, glm::vec3(0.0f, 0.0f, 1.0f))) * 
+						   glm::vec3(0, 1, 0);
+
+			glm::vec3 distance = (CamPos - 0.13f * CamDir + 0.06f*hor - 0.045f*ver) - goldKey.position;
+
+			glm::mat4 T1 = glm::translate(glm::mat4(1), distance);
+			glm::mat4 Torigin = glm::translate(glm::mat4(1), goldKey.position);
+			glm::mat4 R1 = glm::rotate(glm::mat4(1), glm::radians(90.0f), glm::vec3(0, 1, 0));
+			glm::mat4 R2 = glm::rotate(glm::mat4(1), glm::radians(90.0f), glm::vec3(0, 0, 1));
+
+			glm::mat4 R3 = glm::mat3(glm::rotate(glm::mat4(1.0f), CamAng.y, glm::vec3(0.0f, 1.0f, 0.0f))) *
+						   glm::mat3(glm::rotate(glm::mat4(1.0f), CamAng.x, glm::vec3(1.0f, 0.0f, 0.0f))) *
+						   glm::mat3(glm::rotate(glm::mat4(1.0f), CamAng.z, glm::vec3(0.0f, 0.0f, 1.0f)));
+
+			glm::mat4 S1 = glm::scale(glm::mat4(1), glm::vec3(0.08f));
+
+			goldKey.matrix = T1 * Torigin * R3 * R1 * R2 * S1 * glm::inverse(Torigin);
+
+		}
 		updateObjectUniform(ubo, currentImage, &data, goldKey, glm::mat4(1.0f), 1.0f);
 		updateObjectUniform(ubo, currentImage, &data, goldKeyHole4, glm::mat4(1.0f), 1.0f);
 
@@ -662,7 +708,9 @@ protected:
 
 		// Ceiling
 		updateObjectUniform(ubo, currentImage, &data, ceiling, glm::mat4(1.0f));
-		
+
+		// End Plane
+		updateObjectUniform(ubo, currentImage, &data, endPlane, glm::mat4(1.0f));
 	}
 
 	void updateObjectUniform(UniformBufferObject &ubo, uint32_t currentImage, void **data, SceneObject &obj, glm::mat4 modelMatrix) {
