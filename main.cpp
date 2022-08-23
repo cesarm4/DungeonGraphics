@@ -1,5 +1,3 @@
-// This has been adapted from the Vulkan tutorial
-
 #include "MyProject.hpp"
 
 const std::string MODEL_PATH = "models/";
@@ -92,6 +90,7 @@ public:
 	void cleanup();
 };
 
+// Interactable: objects that activate other objects (open the door)
 class Interactable : public SceneObject 
 {
 public:
@@ -103,23 +102,25 @@ public:
 	glm::vec3 pos, glm::vec3 rotAxis, float rot, SceneObject* act) 
 	{
 		SceneObject::init(bp, DSL1, loader, index, text, pos, rotAxis, rot);
-		activate = act;
-		active = false;
+		activate = act;     // door linked to the interactable object
+		active = false;     // interactable object has been used
 		set = false;
 	}
 };
 
+// specific class with attribute hasKey, can be activated only if the player has collected the related key
 class KeyHole : public Interactable 
 {
 public:
+    // true if the player has collected the key
 	bool hasKey = false;
 
 	void init(BaseProject *bp, DescriptorSetLayout *DSL1, Loader &loader, int index, Texture &text, 
 	glm::vec3 pos, SceneObject* act) 
 	{
 		SceneObject::init(bp, DSL1, loader, index, text, pos, glm::vec3(0.0f), 0.0f);
-		activate = act;
-		active = false;
+		activate = act;     // door linked to the keyhole
+		active = false;     // key has been used to open the door
 		set = false;
 	}
 };
@@ -130,6 +131,7 @@ void SceneObject::init(BaseProject *bp, DescriptorSetLayout *DSL1, Loader &loade
 	model.init(bp, "");
 	texture = text;
 	DS.init(bp, DSL1, {{0, UNIFORM, sizeof(UniformBufferObject), nullptr}, {1, TEXTURE, 0, &texture}});
+    // transformation matrix
 	matrix = glm::mat4(1.0f);
 }
 
@@ -140,9 +142,9 @@ void SceneObject::init(BaseProject *bp, DescriptorSetLayout *DSL1, Loader &loade
 	model.init(bp, "");
 	texture = text;
 	DS.init(bp, DSL1, {{0, UNIFORM, sizeof(UniformBufferObject), nullptr}, {1, TEXTURE, 0, &texture}});
-	position = pos;
-	rotationAxis = rotAxis;
-	rotation = rot;
+	position = pos; // starting position
+	rotationAxis = rotAxis; // axis used for object rotation
+	rotation = rot; // angle of rotation
 	matrix = glm::mat4(1.0f);
 }
 
@@ -234,17 +236,18 @@ protected:
 	int mapWidth = 25;
 	int mapHeight = 24;
 
-	const float checkRadius = 0.15;
+    // collision variables
+	const float checkRadius = 0.15; //max distance from walls
 	const int checkSteps = 12;
 
-	float distanceFromKey = 1.5f;
+	float distanceFromKey = 1.5f; //min distance to pick key
 
 	// Here you set the main application parameters
 	void setWindowParameters()
 	{
 		// window size, titile and initial background
-		windowWidth = 800;
-		windowHeight = 600;
+		windowWidth = 1380;
+		windowHeight = 850;
 		windowTitle = "Dungeon";
 		initialBackgroundColor = {0.0f, 0.0f, 0.0f, 1.0f};
 
@@ -254,7 +257,7 @@ protected:
 		setsInPool = 20;
 	}
 
-	// Here you load and setup all your Vulkan objects
+	// Load and setup of your Vulkan objects
 	void localInit()
 	{
 		// Descriptor Layouts [what will be passed to the shaders]
@@ -270,9 +273,10 @@ protected:
 		// be used in this pipeline. The first element will be set 0, and so on..
 		P1.init(this, "shaders/vert.spv", "shaders/frag.spv", {&DSL1});
 
-		// Models, textures and Descriptors (values assigned to the uniforms)
+		// Load objects from file
 		Loader loader = Loader(MODEL_PATH + "DungeonEnd.diff3.obj");
 
+        // Texture loading
 		floorTexture.init(this, TEXTURE_PATH + "terra.png");
 		doorTexture.init(this, TEXTURE_PATH + "wood_door.jpg");
 		doorFlipTexture.init(this, TEXTURE_PATH + "wood_door_flip.jpg");
@@ -284,18 +288,21 @@ protected:
 		doorSideTexture.init(this, TEXTURE_PATH + "DoorSide2.png");
 		endTexture.init(this, TEXTURE_PATH + "end.png");
 
-		// Do this for every object
+		// Objects initialization
 		copperKey.init(this, &DSL1, loader, 0, copperKeyTexture, glm::vec3(15.0, 0.0, 3.0), glm::vec3(0.0f), 0.0f);
 		goldKey.init(this, &DSL1, loader, 1, goldKeyTexture, glm::vec3(10.0, 0.0, -8.0), glm::vec3(0.0f), 0.0f);
 		doorSide.init(this, &DSL1, loader, 2, doorSideTexture);
-		goldKeyHole4.init(this, &DSL1, loader, 3, goldKeyTexture, glm::vec3(11.55, 0.5, 3.95), &door4);
+		
+        // Key Holes
+        goldKeyHole4.init(this, &DSL1, loader, 3, goldKeyTexture, glm::vec3(11.55, 0.5, 3.95), &door4);
 		copperKeyHole2.init(this, &DSL1, loader, 4, copperKeyTexture, glm::vec3(6.95, 0.5, 8.45), &door2);
 
-		// Levers
+		// Levers (interactable objects)
 		lever1.init(this, &DSL1, loader, 5, leverTexture, glm::vec3(3.0, 0.5, 3.5), glm::vec3(1.0f, 0.0f, 0.0f), -90.0f, &door1);
 		lever3.init(this, &DSL1, loader, 6, leverTexture, glm::vec3(9.5, 0.5, 4.0), glm::vec3(0.0f, 0.0f, 1.0f), 90.0f, &door3);
 		lever5.init(this, &DSL1, loader, 7, leverTexture, glm::vec3(4.5, 0.5, -1.0), glm::vec3(0.0f, 0.0f, 1.0f), 90.0f, &door5);
 
+        // Doors with rotation parameters (axis and angle)
 		door5.init(this, &DSL1, loader, 8, doorFlipTexture, glm::vec3(4.4, 0.0, -2.0), glm::vec3(0.0f, 1.0f, 0.0f), -90.0f);
 		door4.init(this, &DSL1, loader, 9, doorTexture, glm::vec3(12.4, 0.0, 4.0), glm::vec3(0.0f, 1.0f, 0.0f), 90.0f);
 		door3.init(this, &DSL1, loader, 10, doorFlipTexture, glm::vec3(9.4, 0.0, 3.0), glm::vec3(0.0f, 1.0f, 0.0f), -90.0f);
@@ -308,6 +315,8 @@ protected:
 		wallN.init(this, &DSL1, loader, 16, wallTexture);
 		wallS.init(this, &DSL1, loader, 17, wallTexture);
 		ceiling.init(this, &DSL1, loader, 18, ceilingTexture);
+        
+        // Plane with final message for victory
 		endPlane.init(this, &DSL1, loader, 19, endTexture);
 
 		allObjects.insert(allObjects.end(), {copperKey, goldKey, doorSide, goldKeyHole4, 
@@ -317,7 +326,7 @@ protected:
 		keyHoles.insert(keyHoles.end(), {&goldKeyHole4, &copperKeyHole2});
 	}
 
-	// Here you destroy all the objects you created!
+	// Destroy all the objects created before closing
 	void localCleanup()
 	{
 		for (SceneObject obj : allObjects)
@@ -368,21 +377,25 @@ protected:
 	// Conversion from 3D coordinates to map coordinates
 	glm::ivec2 posToMap(float x, float y) {
 		// (9, 6) is the initial position of the player in the map
+        // round to have int values, fmax and fmin to avoid negative values or values outside the map
 		int mapX = round(fmax(0.0f, fmin(mapWidth-1,  (x+6))));
 		int mapY = round(fmax(0.0f, fmin(mapHeight-1, (y+9))));
 
 		return glm::ivec2(mapX, mapY);
 	}
 
+    // x, y: points on the circumference of checkRadius around player position
 	bool canStepPoint(float x, float y) {
 		glm::ivec2 mapPos = posToMap(x, y);
 		int pix = (int)map[mapPos.y][mapPos.x];
-		//std::cout << pixX << " " << pixY << " " << x << " " << y << " \t P = " << pix << "\n";		
+        // check if (y,x) coord in the map corresponds to a wall (*) or a door (d)
 		return pix != '*' && pix != 'd';
 	}
 
+    // parameters x, y: camera position
 	bool canStep(float x, float y) {
 		for(int i = 0; i < checkSteps; i++) {
+            // check whether there is an obstacle in the circumference of radius checkRadius around the player (x, y)
 			if(!canStepPoint(x + cos(6.2832 * i / (float)checkSteps) * checkRadius,
 							 y + sin(6.2832 * i / (float)checkSteps) * checkRadius)) {
 				return false;
@@ -391,31 +404,17 @@ protected:
 		return true;
 	}
 
+    // Implementation of player movement
 	glm::mat4 CameraMovement(float time)
 	{
 		static float lastTime = 0.0f;
-		float deltaT = time - lastTime;
+		float deltaT = time - lastTime; // time from prev call
 		lastTime = time;
 
 		const float ROT_SPEED = glm::radians(90.0f);
 		const float MOVE_SPEED = 3.0f;
-		const float MOUSE_RES = 500.0f;
 
-		static double old_xpos = 0, old_ypos = 0;
-		double xpos, ypos;
-		glfwGetCursorPos(window, &xpos, &ypos);
-		double m_dx = xpos - old_xpos;
-		double m_dy = ypos - old_ypos;
-		old_xpos = xpos;
-		old_ypos = ypos;
-		// std::cout << xpos << " " << ypos << " " << m_dx << " " << m_dy << "\n";
-
-		if (glfwGetMouseButton(window, GLFW_MOUSE_BUTTON_LEFT) == GLFW_PRESS)
-		{
-			CamAng.y += -m_dx * ROT_SPEED / MOUSE_RES;
-			CamAng.x += -m_dy * ROT_SPEED / MOUSE_RES;
-		}
-
+        // control camera rotation with left right up down keys
 		if (glfwGetKey(window, GLFW_KEY_LEFT))
 		{
 			CamAng.y += deltaT * ROT_SPEED;
@@ -438,16 +437,17 @@ protected:
 				CamAng.x -= deltaT * ROT_SPEED;
 			}
 		}
-
+        
+        // camera rotation matrix, z axis not used
 		glm::mat3 CamMatDir = glm::mat3(glm::rotate(glm::mat4(1.0f), CamAng.y, glm::vec3(0.0f, 1.0f, 0.0f))) *
-						   glm::mat3(glm::rotate(glm::mat4(1.0f), CamAng.x, glm::vec3(1.0f, 0.0f, 0.0f))) *
-						   glm::mat3(glm::rotate(glm::mat4(1.0f), CamAng.z, glm::vec3(0.0f, 0.0f, 1.0f)));
-
+						   glm::mat3(glm::rotate(glm::mat4(1.0f), CamAng.x, glm::vec3(1.0f, 0.0f, 0.0f)));
+        
 		torchLightDir = CamMatDir * glm::vec3(0.0f, 0.0f, 1.0f);
 		CamDir = CamMatDir * glm::vec3(0.0f, 0.0f, 1.0f);
 
 		glm::vec3 oldCamPos = CamPos;
 
+        // control camera position with A D S W keys
 		if (glfwGetKey(window, GLFW_KEY_A))
 		{
 			CamPos -= MOVE_SPEED * glm::vec3(glm::rotate(glm::mat4(1.0f), CamAng.y, glm::vec3(0.0f, 1.0f, 0.0f)) * glm::vec4(1, 0, 0, 1)) * deltaT;
@@ -465,7 +465,7 @@ protected:
 			CamPos -= MOVE_SPEED * glm::vec3(glm::rotate(glm::mat4(1.0f), CamAng.y, glm::vec3(0.0f, 1.0f, 0.0f)) * glm::vec4(0, 0, 1, 1)) * deltaT;
 		}
 
-		//std::cout << "Cam Pos: " << CamPos[0] << " " << CamPos[1] << " " << CamPos[2] << "\n";
+        // control for walls collision
 		if(!canStep(CamPos.x, CamPos.z)) {
 			CamPos = oldCamPos;
 		}
@@ -481,8 +481,9 @@ protected:
 		{
 			float distance = glm::distance(CamPos, obj->position);
 
-			if (distance < 0.9) 
+			if (distance < 0.9)
 			{
+                // when pressing P, for one time make set parameter true and change active param to open/close doors
 				if (glfwGetKey(window, GLFW_KEY_P) == GLFW_PRESS && !obj->set)
 				{
 					obj->set = true;
@@ -491,18 +492,19 @@ protected:
 					// Open
 					if (obj->active)
 					{
-						// Lever
+						// Lever (to be rotated when activated)
 						glm::mat4 T1 = glm::translate(glm::mat4(1), obj->position);
 						glm::mat4 R1 = glm::rotate(glm::mat4(1), glm::radians(obj->rotation), obj->rotationAxis); // Principal transformation
 						glm::mat4 MT1 = T1 * R1 * glm::inverse(T1);
 
 						obj->matrix = MT1;
 
-						// Door
+						// Door (to be rotated when opened/closed)
 						glm::mat4 T2 = glm::translate(glm::mat4(1), obj->activate->position);
 						glm::mat4 R2 = glm::rotate(glm::mat4(1), glm::radians(obj->activate->rotation), obj->activate->rotationAxis); // Principal transformation
 						glm::mat4 MT2 = T2 * R2 * glm::inverse(T2);
 						
+                        // free space added in the map in place of d (door)
 						glm::ivec2 mapPos = posToMap(obj->activate->position.x, obj->activate->position.z);
 						map[mapPos.y][mapPos.x] = ' ';
 
@@ -512,14 +514,17 @@ protected:
 					else
 					{
 						obj->matrix = glm::mat4(1.0f);
+                        // remove rotation and go back to initial door position
 						obj->activate->matrix = glm::mat4(1.0f);
 
+                        // d (door) in the map in place of free space
 						glm::ivec2 mapPos = posToMap(obj->activate->position.x, obj->activate->position.z);
 						map[mapPos.y][mapPos.x] = 'd';
 					}
 				}
 			}
-
+            
+            // when set is false the player can interact again with the related object
 			if (glfwGetKey(window, GLFW_KEY_P) == GLFW_RELEASE) 
 			{
 				obj->set = false;
@@ -527,19 +532,17 @@ protected:
 		}
 	}
 	
+    // same as checkInteraction, but in this case also check if player has the related key
 	void checkKeyHoles()
 	{
 		for (KeyHole* obj: keyHoles)
 		{
 			float distance = glm::distance(CamPos, obj->position);
 
-			//std::cout << "distanza serratura " << distance << std::endl;
 			if (distance < 2.0) 
 			{
-				//std::cout << "hai chiave " << obj->hasKey << std::endl;
 				if (obj->hasKey && glfwGetKey(window, GLFW_KEY_P) == GLFW_PRESS && !obj->set)
 				{
-					std::cout << "Apriti porta" << std::endl;
 					obj->set = true;
 					obj->active = !obj->active;
 					
@@ -575,6 +578,7 @@ protected:
 		}
 	}
 
+    // allows the player to collect a key when close to it and sets hasKey to true
 	void checkKeys()
 	{
 		float distance = glm::distance(CamPos, goldKey.position);
@@ -608,6 +612,7 @@ protected:
 
 		glfwSetInputMode(window, GLFW_STICKY_MOUSE_BUTTONS, GLFW_TRUE);
 
+        // call to check methods
 		checkInteraction();
 		checkKeyHoles();
 		checkKeys();
@@ -626,6 +631,7 @@ protected:
 		ubo.eyePos = CamPos;
 		ubo.lightDir = torchLightDir;
 
+        // When key are collected, show them in the bottom right corner of the screen as inventary
 		// CopperKey
 		if (copperKeyHole2.hasKey)
 		{
@@ -633,7 +639,6 @@ protected:
 
 			glm::vec3 ver = glm::mat3(glm::rotate(glm::mat4(1.0f), CamAng.y, glm::vec3(0.0f, 1.0f, 0.0f))) *
 						   glm::mat3(glm::rotate(glm::mat4(1.0f), CamAng.x, glm::vec3(1.0f, 0.0f, 0.0f))) *
-						   //glm::mat3(glm::rotate(glm::mat4(1.0f), CamAng.z, glm::vec3(0.0f, 0.0f, 1.0f))) * 
 						   glm::vec3(0, 1, 0);
 
 			glm::vec3 distance = (CamPos - 0.13f * CamDir + 0.045f*hor - 0.045f*ver) - copperKey.position;
@@ -645,13 +650,13 @@ protected:
 
 			glm::mat4 R3 = glm::mat3(glm::rotate(glm::mat4(1.0f), CamAng.y, glm::vec3(0.0f, 1.0f, 0.0f))) *
 						   glm::mat3(glm::rotate(glm::mat4(1.0f), CamAng.x, glm::vec3(1.0f, 0.0f, 0.0f)));
-						   //glm::mat3(glm::rotate(glm::mat4(1.0f), CamAng.z, glm::vec3(0.0f, 0.0f, 1.0f)));
 
 			glm::mat4 S1 = glm::scale(glm::mat4(1), glm::vec3(0.08f));
 
 			copperKey.matrix = T1 * Torigin * R3 * R1 * R2 * S1 * glm::inverse(Torigin);
 
 		}
+        // update object position
 		updateObjectUniform(ubo, currentImage, &data, copperKey, glm::mat4(1.0f), 1.0f);
 		updateObjectUniform(ubo, currentImage, &data, copperKeyHole2, glm::mat4(1.0f), 1.0f);
 
@@ -662,7 +667,6 @@ protected:
 
 			glm::vec3 ver = glm::mat3(glm::rotate(glm::mat4(1.0f), CamAng.y, glm::vec3(0.0f, 1.0f, 0.0f))) *
 						   glm::mat3(glm::rotate(glm::mat4(1.0f), CamAng.x, glm::vec3(1.0f, 0.0f, 0.0f))) *
-						   glm::mat3(glm::rotate(glm::mat4(1.0f), CamAng.z, glm::vec3(0.0f, 0.0f, 1.0f))) * 
 						   glm::vec3(0, 1, 0);
 
 			glm::vec3 distance = (CamPos - 0.13f * CamDir + 0.06f*hor - 0.045f*ver) - goldKey.position;
@@ -673,8 +677,7 @@ protected:
 			glm::mat4 R2 = glm::rotate(glm::mat4(1), glm::radians(90.0f), glm::vec3(0, 0, 1));
 
 			glm::mat4 R3 = glm::mat3(glm::rotate(glm::mat4(1.0f), CamAng.y, glm::vec3(0.0f, 1.0f, 0.0f))) *
-						   glm::mat3(glm::rotate(glm::mat4(1.0f), CamAng.x, glm::vec3(1.0f, 0.0f, 0.0f))) *
-						   glm::mat3(glm::rotate(glm::mat4(1.0f), CamAng.z, glm::vec3(0.0f, 0.0f, 1.0f)));
+						   glm::mat3(glm::rotate(glm::mat4(1.0f), CamAng.x, glm::vec3(1.0f, 0.0f, 0.0f)));
 
 			glm::mat4 S1 = glm::scale(glm::mat4(1), glm::vec3(0.08f));
 
